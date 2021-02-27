@@ -62,9 +62,12 @@ def validation(model, testloader, criterion, device):
     return test_loss, accuracy
 
 # Define NN function
-def make_NN(n_hidden, n_epoch, labelsdict, lr, device, model_name, trainloader, validloader, train_data):
+def make_NN(n_hidden, n_epoch, labelsdict, lr, device, model_name, trainloader, validloader, train_data, print_model):
     # Import pre-trained NN model 
     model = getattr(models, model_name)(pretrained=True)
+
+    if print_model:
+        print(model)
     
     # Freeze parameters that we don't need to re-train 
     for param in model.parameters():
