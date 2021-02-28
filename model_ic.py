@@ -74,13 +74,19 @@ def make_NN(n_hidden, n_epoch, labelsdict, lr, device, model_name, trainloader, 
         param.requires_grad = False
         
     # Make classifier
-    n_in = next(model.classifier.modules()).in_features
-    n_out = len(labelsdict) 
-    model.classifier = NN_Classifier(input_size=n_in, output_size=n_out, hidden_layers=n_hidden)
+    # Extract last layer details
+    last_layer = list(model.named_modules())[-1]
+    last_layer_key = last_layer[0]
+    last_layer_value = last_layer[1]
+    n_in = last_layer_value.in_features
+
+    n_out = len(labelsdict)
+    setattr(model, last_layer_key, NN_Classifier(input_size=n_in, output_size=n_out, hidden_layers=n_hidden))
     
     # Define criterion and optimizer
     criterion = nn.NLLLoss()
-    optimizer = optim.Adam(model.classifier.parameters(), lr = lr)
+    # Modify the optimizer to use the last layer instead of classifier
+    optimizer = optim.Adam(getattr(model, last_layer_key).parameters(), lr = lr)
 
     model.to(device)
     start = time.time()
@@ -114,6 +120,7 @@ def make_NN(n_hidden, n_epoch, labelsdict, lr, device, model_name, trainloader, 
                     test_loss, accuracy = validation(model, validloader, criterion, device)
 
                 print("Epoch: {}/{} - ".format(e+1, epochs),
+                      "Steps: {} - ".format(steps),
                       "Training Loss: {:.3f} - ".format(running_loss/print_every),
                       "Validation Loss: {:.3f} - ".format(test_loss/len(validloader)),
                       "Validation Accuracy: {:.3f}".format(accuracy/len(validloader)))
@@ -123,15 +130,17 @@ def make_NN(n_hidden, n_epoch, labelsdict, lr, device, model_name, trainloader, 
                 # Make sure training is back on
                 model.train()
     
-    # Add model info 
-    model.classifier.n_in = n_in
-    model.classifier.n_hidden = n_hidden
-    model.classifier.n_out = n_out
-    model.classifier.labelsdict = labelsdict
-    model.classifier.lr = lr
-    model.classifier.optimizer_state_dict = optimizer.state_dict
-    model.classifier.model_name = model_name
-    model.classifier.class_to_idx = train_data.class_to_idx
+    # Condition the adding of model info only for densenet169
+    if model_name == "densenet169":
+        # Add model info
+        model.classifier.n_in = n_in
+        model.classifier.n_hidden = n_hidden
+        model.classifier.n_out = n_out
+        model.classifier.labelsdict = labelsdict
+        model.classifier.lr = lr
+        model.classifier.optimizer_state_dict = optimizer.state_dict
+        model.classifier.model_name = model_name
+        model.classifier.class_to_idx = train_data.class_to_idx
     
     print('model:', model_name, '- hidden layers:', n_hidden, '- epochs:', n_epoch, '- lr:', lr)
     print(f"Run time: {(time.time() - start)/60:.3f} min")
