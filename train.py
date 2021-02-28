@@ -14,6 +14,7 @@ parser.add_argument("--save_dir", help="save model")
 parser.add_argument("--print_model", default=False, help="print model")
 parser.add_argument("--use_pretrain", default=True, help="use pretrained model")
 parser.add_argument("--train_whole", default=False, help="train the whole model")
+parser.add_argument("--print_every", type=int, default=40, help="step interval to print")
 
 args = parser.parse_args()
 
@@ -32,7 +33,7 @@ elif args.train_whole == 'True':
 
 model = make_NN(n_hidden=[args.hidden_units], n_epoch=args.epochs, labelsdict=cat_to_name, lr=args.learning_rate, device=args.gpu, \
                 model_name=args.arch, trainloader=trainloader, validloader=validloader, train_data=train_data, print_model=args.print_model, \
-                use_pretrain=args.use_pretrain, train_whole=args.train_whole)
+                use_pretrain=args.use_pretrain, train_whole=args.train_whole, print_every=args.print_every)
 
 if args.save_dir:
     save_checkpoint(model, args.save_dir)

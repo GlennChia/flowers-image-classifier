@@ -63,7 +63,8 @@ def validation(model, testloader, criterion, device):
 
 # Define NN function
 def make_NN(n_hidden, n_epoch, labelsdict, lr, device, model_name, trainloader, 
-            validloader, train_data, print_model, use_pretrain, train_whole):
+            validloader, train_data, print_model, use_pretrain, train_whole,
+            print_every):
     # Import pre-trained NN model only if use_pretrain is True
     model = getattr(models, model_name)(pretrained=use_pretrain)
 
@@ -104,7 +105,7 @@ def make_NN(n_hidden, n_epoch, labelsdict, lr, device, model_name, trainloader,
     epochs = n_epoch
     steps = 0 
     running_loss = 0
-    print_every = 40
+    print_every = print_every
     for e in range(epochs):
         model.train()
         for images, labels in trainloader:
