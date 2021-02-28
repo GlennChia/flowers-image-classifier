@@ -62,16 +62,24 @@ def validation(model, testloader, criterion, device):
     return test_loss, accuracy
 
 # Define NN function
-def make_NN(n_hidden, n_epoch, labelsdict, lr, device, model_name, trainloader, validloader, train_data, print_model):
-    # Import pre-trained NN model 
-    model = getattr(models, model_name)(pretrained=True)
+def make_NN(n_hidden, n_epoch, labelsdict, lr, device, model_name, trainloader, 
+            validloader, train_data, print_model, use_pretrain, train_whole):
+    # Import pre-trained NN model only if use_pretrain is True
+    model = getattr(models, model_name)(pretrained=use_pretrain)
 
     if print_model:
         print(model)
     
-    # Freeze parameters that we don't need to re-train 
-    for param in model.parameters():
-        param.requires_grad = False
+    # Freeze parameters that we don't need to re-train. Set to requires_grad to False
+    # if train_whole then don't freeze - set requires_grad to True 
+    # if not train_whole freeze all layers - set requires_grad to False
+    if train_whole:
+        for param in model.parameters():
+            param.requires_grad = True
+    else:
+        # Freeze all layers
+        for param in model.parameters():
+            param.requires_grad = False
         
     # Make classifier
     # Extract last layer details
@@ -81,6 +89,8 @@ def make_NN(n_hidden, n_epoch, labelsdict, lr, device, model_name, trainloader, 
     n_in = last_layer_value.in_features
 
     n_out = len(labelsdict)
+
+    # Setting a new layer here means that the parameters at this layer (top layer) are not frozen
     setattr(model, last_layer_key, NN_Classifier(input_size=n_in, output_size=n_out, hidden_layers=n_hidden))
     
     # Define criterion and optimizer

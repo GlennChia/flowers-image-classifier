@@ -12,6 +12,8 @@ parser.add_argument("--epochs", type=int, default=1, help="set epochs")
 parser.add_argument("--gpu", action="store_const", const="cuda", default="cpu", help="use gpu")
 parser.add_argument("--save_dir", help="save model")
 parser.add_argument("--print_model", default=False, help="print model")
+parser.add_argument("--use_pretrain", default=True, help="use pretrained model")
+parser.add_argument("--train_whole", default=False, help="train the whole model")
 
 args = parser.parse_args()
 
@@ -19,8 +21,18 @@ cat_to_name = read_jason(args.category_names)
 
 trainloader, testloader, validloader, train_data = load_data(args.data_dir)
 
+if args.use_pretrain == 'False':
+    args.use_pretrain = False
+elif args.use_pretrain == 'True':
+    args.use_pretrain = True
+if args.train_whole == 'False':
+    args.train_whole = False
+elif args.train_whole == 'True':
+    args.train_whole = True
+
 model = make_NN(n_hidden=[args.hidden_units], n_epoch=args.epochs, labelsdict=cat_to_name, lr=args.learning_rate, device=args.gpu, \
-                model_name=args.arch, trainloader=trainloader, validloader=validloader, train_data=train_data, print_model=args.print_model)
+                model_name=args.arch, trainloader=trainloader, validloader=validloader, train_data=train_data, print_model=args.print_model, \
+                use_pretrain=args.use_pretrain, train_whole=args.train_whole)
 
 if args.save_dir:
     save_checkpoint(model, args.save_dir)
