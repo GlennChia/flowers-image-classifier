@@ -44,6 +44,69 @@ class NN_Classifier(nn.Module):
         
         return F.log_softmax(x, dim=1)
 
+# Custom Net for Task 4
+class Net_single_layer(nn.Module):
+    def __init__(self):
+        super(Net_single_layer, self).__init__()
+        # some resnet layers use conv1 -> bn1 -> relu -> conv2 -> bn2
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+        self.bn1 = nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        self.layer1 = nn.Sequential(
+            nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False),
+            nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False),
+            nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        self.avgpool = nn.AdaptiveAvgPool2d(output_size=(1, 1))
+        self.fc = nn.Linear(in_features=64, out_features=1000, bias=True)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = F.relu(x, inplace=True)
+        x = F.max_pool2d(x, kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
+        x = self.layer1(x)
+        x = self.avgpool(x)
+        x = x.view(x.size(0),-1)
+        x = self.fc(x)
+        return x
+
+class Net_double_layer(nn.Module):
+    def __init__(self):
+        super(Net_double_layer, self).__init__()
+        # some resnet layers use conv1 -> bn1 -> relu -> conv2 -> bn2
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+        self.bn1 = nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        self.layer1 = nn.Sequential(
+            nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False),
+            nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False),
+            nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        self.layer2 = nn.Sequential(
+            nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False),
+            nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False),
+            nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        self.avgpool = nn.AdaptiveAvgPool2d(output_size=(1, 1))
+        self.fc = nn.Linear(in_features=64, out_features=1000, bias=True)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = F.relu(x, inplace=True)
+        x = F.max_pool2d(x, kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.avgpool(x)
+        x = x.view(x.size(0),-1)
+        x = self.fc(x)
+        return x
+
 # Define validation function 
 def validation(model, testloader, criterion, device):
     test_loss = 0
@@ -64,9 +127,21 @@ def validation(model, testloader, criterion, device):
 # Define NN function
 def make_NN(n_hidden, n_epoch, labelsdict, lr, device, model_name, trainloader, 
             validloader, train_data, print_model, use_pretrain, train_whole,
-            print_every):
+            print_every, train_custom, num_layers):
     # Import pre-trained NN model only if use_pretrain is True
-    model = getattr(models, model_name)(pretrained=use_pretrain)
+    if train_custom:
+        if num_layers == 1:
+            model_name = "net_single_layer"
+            net_single_layer = Net_single_layer()
+            setattr(models, model_name, net_single_layer)
+        else:
+            # Default to 2 layers
+            model_name = "net_double_layer"
+            net_double_layer = Net_double_layer()
+            setattr(models, model_name, net_double_layer)
+        model = getattr(models, model_name)
+    else:
+        model = getattr(models, model_name)(pretrained=use_pretrain)
 
     if print_model:
         print(model)
