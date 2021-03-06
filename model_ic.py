@@ -127,7 +127,7 @@ def validation(model, testloader, criterion, device):
 # Define NN function
 def make_NN(n_hidden, n_epoch, labelsdict, lr, device, model_name, trainloader, 
             validloader, train_data, print_model, use_pretrain, train_whole,
-            print_every, train_custom, num_layers):
+            print_every, train_custom=False, num_layers=1):
     # Import pre-trained NN model only if use_pretrain is True
     if train_custom:
         if num_layers == 1:
